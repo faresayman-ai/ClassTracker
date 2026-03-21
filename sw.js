@@ -1,4 +1,4 @@
-const CACHE = 'classtrack-v1';
+const CACHE = 'classtrack-v2';
 
 const STATIC = [
   './index.html',
@@ -31,6 +31,8 @@ self.addEventListener('fetch', e => {
   if (
     url.hostname.includes('firebaseio.com') ||
     url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('accounts.google.com') ||
+    url.hostname.includes('gmail.googleapis.com') ||
     url.hostname.includes('anthropic.com') ||
     url.hostname.includes('umami') ||
     url.pathname.includes('/__/')
