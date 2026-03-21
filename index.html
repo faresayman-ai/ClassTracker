@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ClassTrack</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ClassTrack">
+<meta name="theme-color" content="#060d12">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#07080a;--s1:#0f1117;--s2:#171b23;--s3:#1f2330;--b1:#252b3a;--b2:#2e3547;--b3:#3a4259;--text:#e2e6f0;--muted:#7a819a;--dim:#3d4459;--blue:#4f8ef7;--blue2:#7ab0ff;--cyan:#22d3ee;--purple:#9b6dff;--green:#2dd4a0;--amber:#f5a623;--red:#f06464;--host:#f5a623;--r:14px;--font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;}
+#s-landing{flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(79,142,247,0.12) 0%,transparent 70%);}
+#s-login,#s-processing,#s-join{flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;}
+#s-app,#s-room{flex-direction:column;}
+/* LANDING */
+.hero-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:20px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);font-size:12px;font-weight:500;color:var(--blue2);margin-bottom:28px;letter-spacing:0.04em;}
+.hero-title{font-size:clamp(32px,6vw,56px);font-weight:700;line-height:1.1;margin-bottom:16px;background:linear-gradient(135deg,#fff 0%,var(--blue2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:16px;color:var(--muted);max-width:440px;line-height:1.6;margin-bottom:48px;}
+.mode-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:100%;max-width:660px;}
+.mode-card{flex:1;min-width:280px;max-width:310px;background:var(--s1);border:1px solid var(--b1);border-radius:20px;padding:28px;text-align:left;cursor:pointer;transition:all 0.2s;}
+.mode-card:hover{transform:translateY(-2px);box-shadow:0 20px 50px rgba(0,0,0,0.3);}
+.mode-card.cb:hover{border-color:var(--blue);}
+.mode-card.ca:hover{border-color:var(--amber);}
+.mode-icon{font-size:28px;margin-bottom:14px;}
+.mode-title{font-size:17px;font-weight:700;margin-bottom:6px;}
+.mode-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;}
+.mode-btn{width:100%;padding:12px;border-radius:10px;border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;margin-top:16px;}
+.mode-btn.cb{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;}
+.mode-btn.ca{background:linear-gradient(135deg,var(--amber),#d97706);color:#000;}
+.mode-features{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.mode-features li{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.mode-features li::before{content:'✓';color:var(--green);font-weight:700;font-size:11px;}
+/* LOGIN */
+.login-card{background:var(--s1);border:1px solid var(--b1);border-radius:20px;padding:36px;width:100%;max-width:420px;box-shadow:0 40px 80px rgba(0,0,0,0.4);}
+.login-card h2{font-size:18px;font-weight:600;margin-bottom:6px;}
+.login-card>p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+.back-btn{background:none;border:none;color:var(--muted);font-family:var(--font);font-size:13px;cursor:pointer;margin-bottom:20px;display:flex;align-items:center;gap:6px;padding:0;}
+.back-btn:hover{color:var(--text);}
+.email-field{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:14px 16px;font-family:var(--font);font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;margin-bottom:12px;}
+.email-field:focus{border-color:var(--blue);}
+.email-field::placeholder{color:var(--dim);}
+.btn-google{width:100%;padding:14px;background:linear-gradient(135deg,var(--blue) 0%,var(--purple) 100%);border:none;border-radius:10px;font-family:var(--font);font-size:15px;font-weight:600;color:#fff;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-google:hover{opacity:0.9;transform:translateY(-1px);}
+.login-note{margin-top:14px;font-size:12px;color:var(--dim);text-align:center;line-height:1.5;}
+.steps-list{margin-top:22px;display:flex;flex-direction:column;gap:11px;}
+.step-item{display:flex;align-items:flex-start;gap:12px;}
+.step-num{width:24px;height:24px;min-width:24px;border-radius:50%;background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.25);font-size:11px;font-weight:600;color:var(--blue2);display:flex;align-items:center;justify-content:center;}
+.step-text{font-size:13px;color:var(--muted);line-height:1.4;padding-top:3px;}
+.step-text strong{color:var(--text);font-weight:500;}
+/* PROCESSING */
+.processing-icon{width:72px;height:72px;border-radius:50%;background:rgba(79,142,247,0.1);border:2px solid rgba(79,142,247,0.2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 24px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:0.85}}
+.processing-title{font-size:22px;font-weight:600;margin-bottom:8px;}
+.processing-sub{font-size:14px;color:var(--muted);margin-bottom:40px;}
+.progress-steps{width:100%;max-width:380px;text-align:left;}
+.p-step{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--b1);font-size:14px;}
+.p-step:last-child{border-bottom:none;}
+.p-step-icon{width:32px;height:32px;min-width:32px;border-radius:50%;background:var(--s2);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.p-step-icon.spin{animation:spin 0.8s linear infinite;}
+.p-step-icon.done{background:rgba(45,212,160,0.1);border-color:rgba(45,212,160,0.3);}
+.p-step-icon.active{background:rgba(79,142,247,0.1);border-color:rgba(79,142,247,0.3);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.p-step-text{flex:1;}.p-step-label{font-weight:500;}.p-step-detail{font-size:12px;color:var(--muted);margin-top:2px;}
+/* JOIN */
+.join-wrap{width:100%;max-width:460px;}
+.join-title{font-size:clamp(28px,5vw,40px);font-weight:700;line-height:1.15;margin-bottom:10px;background:linear-gradient(120deg,#fff 30%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.join-sub{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:32px;}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;}
+.card+.card{margin-top:14px;}
+.card-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.field{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:13px 16px;font-family:var(--font);font-size:14px;color:var(--text);outline:none;transition:border-color .2s;margin-bottom:10px;}
+.field:focus{border-color:var(--blue);}
+.field::placeholder{color:var(--dim);}
+.field-code{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:.3em;text-align:center;text-transform:uppercase;padding:16px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;border:none;}
+.btn-blue{background:var(--blue);color:#fff;width:100%;}.btn-blue:hover{background:#3a7de8;transform:translateY(-1px);}
+.btn-amber{background:linear-gradient(135deg,var(--amber),#d97706);color:#000;width:100%;}.btn-amber:hover{opacity:.9;transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--b2);color:var(--muted);padding:8px 16px;border-radius:8px;font-size:13px;}
+.btn-outline:hover{border-color:var(--b3);color:var(--text);}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:8px;font-weight:500;}
+.btn-danger{background:rgba(240,100,100,.12);border:1px solid rgba(240,100,100,.25);color:var(--red);}.btn-danger:hover{background:rgba(240,100,100,.2);}
+.btn-green{background:rgba(45,212,160,.12);border:1px solid rgba(45,212,160,.25);color:var(--green);}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--dim);font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--b1);}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,8,10,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--b1);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.nav-logo{font-size:16px;font-weight:700;color:var(--text);}
+.nav-logo span{color:var(--blue);}
+.nav-left,.nav-l{display:flex;align-items:center;gap:12px;}
+.nav-right,.nav-r{display:flex;align-items:center;gap:10px;}
+.btn-n{padding:7px 14px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--b2);background:transparent;color:var(--muted);transition:all 0.15s;}
+.btn-n:hover{color:var(--text);background:var(--s2);}
+.btn-n.p{background:var(--blue);border-color:var(--blue);color:#fff;}
+.btn-n.p:hover{opacity:0.85;}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:5px 12px 5px 5px;font-size:13px;color:var(--muted);}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;}
+.room-pill{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:4px 12px;font-family:var(--mono);font-size:13px;color:var(--cyan);letter-spacing:.08em;}
+.host-badge{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:var(--host);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;letter-spacing:.06em;}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.online-count{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--green);}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;flex-shrink:0;}
+/* PERSONAL APP */
+.container{max-width:820px;margin:0 auto;padding:28px 24px;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.stat{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:18px;}
+.stat-val{font-size:26px;font-weight:700;margin-bottom:4px;}.stat-lbl{font-size:12px;color:var(--muted);}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;}
+.assignments{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.acard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:18px 20px;display:flex;align-items:flex-start;gap:14px;transition:border-color 0.15s;position:relative;overflow:hidden;}
+.acard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.acard.urgency-critical::after{background:var(--red);}
+.acard.urgency-soon::after{background:var(--amber);}
+.acard.urgency-ok::after{background:var(--blue);}
+.acard.urgency-done::after{background:var(--b2);}
+.acard:hover{border-color:var(--b2);}
+.acheck{width:22px;height:22px;min-width:22px;border-radius:50%;border:1.5px solid var(--b2);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;margin-top:2px;background:transparent;}
+.acheck:hover{border-color:var(--green);background:rgba(45,212,160,0.08);}
+.acheck.on{background:var(--green);border-color:var(--green);}
+.acheck.on::after{content:'✓';font-size:11px;color:#000;font-weight:800;}
+.abody{flex:1;min-width:0;}.atitle{font-size:15px;font-weight:500;margin-bottom:6px;}
+.atitle.struck{text-decoration:line-through;color:var(--dim);}
+.ameta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;}
+.tag-course{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);color:var(--blue2);}
+.tag-date-ok{background:rgba(45,212,160,0.1);border:1px solid rgba(45,212,160,0.2);color:var(--green);}
+.tag-date-soon{background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.2);color:var(--amber);}
+.tag-date-crit{background:rgba(240,100,100,0.1);border:1px solid rgba(240,100,100,0.2);color:var(--red);}
+.tag-weight{background:rgba(155,109,255,0.1);border:1px solid rgba(155,109,255,0.2);color:var(--purple);}
+.tag-cal{background:rgba(45,212,160,0.08);border:1px solid rgba(45,212,160,0.15);color:var(--green);font-size:11px;}
+.acountdown{font-family:var(--mono);font-size:11px;color:var(--dim);}
+.adel{padding:6px 10px;background:transparent;border:1px solid transparent;border-radius:7px;color:var(--dim);cursor:pointer;font-size:13px;transition:all 0.15s;}
+.adel:hover{border-color:var(--b2);color:var(--red);}
+.board-grid{display:flex;flex-direction:column;gap:10px;}
+.bcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px 20px;display:flex;align-items:center;gap:14px;}
+.bavatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.binfo{flex:1;min-width:0;}.bname{font-size:14px;font-weight:500;}.bdetail{font-size:12px;color:var(--muted);margin-top:2px;}
+.bprog-track{height:4px;background:var(--b1);border-radius:2px;margin-top:7px;width:160px;}
+.bprog-fill{height:100%;border-radius:2px;transition:width 0.5s ease;}
+.bpct{font-size:14px;font-weight:600;}
+.share-box{background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:12px;color:var(--muted);word-break:break-all;margin:12px 0;max-height:80px;overflow-y:auto;}
+.import-row{display:flex;gap:8px;margin-top:12px;}
+.import-input{flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:9px 14px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;}
+.import-input:focus{border-color:var(--blue);}
+.import-input::placeholder{color:var(--dim);}
+.tabs{display:flex;gap:4px;margin-bottom:24px;}
+.tab{padding:8px 18px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-family:var(--font);font-size:14px;cursor:pointer;transition:all 0.15s;}
+.tab:hover{color:var(--text);background:var(--s2);}
+.tab.on{color:var(--blue2);background:rgba(79,142,247,0.1);}
+.rem-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--b1);}
+.rem-row:last-child{border-bottom:none;}
+.rem-lbl{font-size:14px;font-weight:500;}.rem-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.toggle{width:42px;height:24px;border-radius:12px;background:var(--b2);border:none;position:relative;cursor:pointer;transition:background 0.2s;}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform 0.2s;}
+.toggle.on{background:var(--blue);}.toggle.on::after{transform:translateX(18px);}
+.app-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:22px;margin-bottom:18px;}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:16px;}
+.prog-track{height:5px;background:var(--b1);border-radius:3px;margin-bottom:24px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width 0.5s ease;}
+.empty{text-align:center;padding:52px 24px;color:var(--muted);}
+.empty-icon{font-size:38px;opacity:0.4;margin-bottom:12px;}
+/* ROOM APP */
+.room-body{display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden;}
+.sidebar{background:var(--s1);border-right:1px solid var(--b1);overflow-y:auto;padding:18px 14px;display:flex;flex-direction:column;gap:6px;}
+.room-main{overflow-y:auto;padding:24px;}
+.sidebar-section{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:12px 8px 6px;}
+.member-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .15s;}
+.member-row:hover{background:var(--s2);}
+.member-row.selected{background:var(--s3);border:1px solid var(--b2);}
+.member-info{flex:1;min-width:0;}
+.member-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.member-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.member-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;flex-shrink:0;}
+.badge-host{background:rgba(245,158,11,.15);color:var(--amber);}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-green{background:var(--green);box-shadow:0 0 4px var(--green);}
+.dot-gray{background:var(--dim);}
+.room-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--b1);}
+.room-tabs .tab{border-radius:9px 9px 0 0;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.room-tabs .tab.on{color:var(--cyan);border-bottom-color:var(--cyan);background:transparent;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.live-tag{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green);}
+.live-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.5s ease-in-out infinite;}
+.shared-doc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;margin-bottom:20px;}
+.doc-toolbar{background:var(--s2);border-bottom:1px solid var(--b1);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.doc-toolbar-title{font-size:13px;font-weight:600;color:var(--text);margin-right:8px;}
+.doc-table{width:100%;border-collapse:collapse;}
+.doc-table th{background:var(--s3);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--b2);}
+.doc-table td{padding:0;border-bottom:1px solid var(--b1);vertical-align:middle;}
+.doc-table tr:last-child td{border-bottom:none;}
+.doc-table tr:hover td{background:rgba(255,255,255,.015);}
+.cell-input{width:100%;background:transparent;border:none;outline:none;padding:11px 14px;font-family:var(--font);font-size:13px;color:var(--text);transition:background .15s;}
+.cell-input:focus{background:rgba(79,142,247,.06);}
+.cell-input:disabled{color:var(--muted);cursor:default;}
+.cell-input::placeholder{color:var(--dim);}
+.cell-select{width:100%;background:transparent;border:none;outline:none;padding:11px 14px;font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer;}
+.cell-select:disabled{color:var(--muted);}
+option{background:var(--s2);}
+.row-actions{display:flex;gap:4px;padding:6px 10px;opacity:0;transition:opacity .15s;}
+.doc-table tr:hover .row-actions{opacity:1;}
+.add-row-form{display:flex;gap:8px;padding:14px 16px;background:var(--s2);border-top:1px dashed var(--b2);flex-wrap:wrap;align-items:center;}
+.add-field{flex:1;min-width:100px;background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;}
+.add-field:focus{border-color:var(--blue);}
+.add-field::placeholder{color:var(--dim);}
+.announce-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.announce-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px 18px;}
+.announce-card.pinned{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04);}
+.announce-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.announce-author{font-size:12px;font-weight:600;color:var(--text);}
+.announce-time{font-size:11px;color:var(--muted);}
+.announce-pin{font-size:10px;color:var(--amber);background:rgba(245,158,11,.1);border-radius:5px;padding:2px 7px;font-weight:600;}
+.announce-text{font-size:14px;color:var(--text);line-height:1.55;}
+.announce-input-row{display:flex;gap:8px;}
+.announce-input{flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:11px 14px;font-family:var(--font);font-size:14px;color:var(--text);outline:none;}
+.announce-input:focus{border-color:var(--blue);}
+.announce-input::placeholder{color:var(--dim);}
+.member-detail{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:20px;margin-bottom:14px;}
+.md-header{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.md-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#000;}
+.md-name{font-size:17px;font-weight:600;}
+.md-sub{font-size:13px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px;}
+.md-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+.md-stat{background:var(--s2);border:1px solid var(--b1);border-radius:9px;padding:12px;text-align:center;}
+.md-stat-val{font-size:20px;font-weight:700;}.md-stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;}
+.host-controls{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);border-radius:var(--r);padding:16px 18px;margin-bottom:18px;}
+.hc-title{font-size:12px;font-weight:600;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.hc-row{display:flex;gap:8px;flex-wrap:wrap;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--b2);color:var(--text);padding:12px 18px;border-radius:11px;font-size:14px;box-shadow:0 12px 40px rgba(0,0,0,0.5);transform:translateY(80px);opacity:0;z-index:9999;transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1);display:flex;align-items:center;gap:9px;}
+.toast.show{transform:translateY(0);opacity:1;}
+@media(max-width:700px){.room-body{grid-template-columns:1fr;}.sidebar{display:none;}nav{padding:0 14px;}.room-main{padding:16px;}}
+@media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr);}.container{padding:18px 14px;}}
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<!-- SCREEN 1: LANDING -->
+<div id="s-landing" class="screen active">
+  <div class="hero-badge">✦ Works on any device · No account needed</div>
+  <h1 class="hero-title">Class<span style="-webkit-text-fill-color:var(--blue2)">Track</span></h1>
+  <p class="hero-sub">Never miss an assignment. Track your own deadlines or collaborate with your whole class in a live shared room.</p>
+  <div class="mode-cards">
+    <div class="mode-card cb" onclick="goTo('login')">
+      <div class="mode-icon">🎓</div>
+      <div class="mode-title">Personal tracker</div>
+      <div class="mode-desc">Add assignments manually or paste email text — ClassTrack parses deadlines and keeps everything organised locally on your device.</div>
+      <ul class="mode-features"><li>Manual entry or paste emails</li><li>Smart deadline detection</li><li>24h + 2h reminders</li><li>Progress tracking</li></ul>
+      <button class="mode-btn cb">Start tracking →</button>
+    </div>
+    <div class="mode-card ca" onclick="goTo('join')">
+      <div class="mode-icon">👥</div>
+      <div class="mode-title">Shared room</div>
+      <div class="mode-desc">Create a live room. Everyone sees the same assignments, progress board and announcements in real-time.</div>
+      <ul class="mode-features"><li>Real-time Firebase sync</li><li>Host controls all assignments</li><li>Live progress board</li><li>Class announcements</li></ul>
+      <button class="mode-btn ca">Create / join room →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: PERSONAL LOGIN -->
+<div id="s-login" class="screen">
+  <div class="login-card" style="max-width:500px">
+    <button class="back-btn" onclick="goTo('landing')">← Back</button>
+    <h2>Personal tracker</h2>
+    <p>Sign in with Google to let ClassTrack scan your Gmail for assignment emails automatically — or add assignments manually.</p>
+
+    <!-- Gmail OAuth button -->
+    <button class="btn-google" id="btn-gmail-signin" onclick="startGmailOAuth()" style="margin-bottom:14px;background:linear-gradient(135deg,#4285f4,#34a853)">
+      <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.8 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.5 20-21 0-1.4-.2-2.7-.5-4z"/></svg>
+      Scan Gmail for assignments
+    </button>
+
+    <div class="divider">or continue without Gmail</div>
+
+    <input class="email-field" id="login-email" type="text" placeholder="Your name or email…" style="margin-bottom:10px"/>
+    <button class="btn-google" onclick="startFlow()" style="margin-bottom:18px;background:linear-gradient(135deg,var(--blue),var(--purple))">
+      → Get started manually
+    </button>
+
+    <div class="divider">or paste email text</div>
+    <textarea id="paste-emails" class="email-field" rows="4" placeholder="Paste assignment emails here…" style="resize:vertical;font-size:13px;line-height:1.5"></textarea>
+    <button class="btn-google" onclick="startFlowWithPaste()" style="background:linear-gradient(135deg,var(--cyan),var(--blue))">
+      ✦ Parse emails &amp; start
+    </button>
+
+    <div class="steps-list" style="margin-top:20px">
+      <div class="step-item"><div class="step-num">1</div><div class="step-text"><strong>Click "Scan Gmail"</strong> — sign in with your Google account</div></div>
+      <div class="step-item"><div class="step-num">2</div><div class="step-text">ClassTrack reads your <strong>last 50 academic emails</strong> automatically</div></div>
+      <div class="step-item"><div class="step-num">3</div><div class="step-text">Assignments are detected and saved to <strong>your dashboard</strong></div></div>
+    </div>
+    <p class="login-note" style="margin-top:14px">ClassTrack only reads email subjects and snippets. Emails never leave your browser session.</p>
+  </div>
+</div>
+
+<!-- SCREEN 3: PROCESSING -->
+<div id="s-processing" class="screen">
+  <div class="processing-icon" id="proc-icon">⚡</div>
+  <div class="processing-title" id="proc-title">Detecting assignments…</div>
+  <div class="processing-sub" id="proc-sub">Parsing your text for deadlines</div>
+  <div class="progress-steps">
+    <div class="p-step"><div class="p-step-icon active" id="step-auth-icon">📝</div><div class="p-step-text"><div class="p-step-label" id="step-auth-label">Reading text</div><div class="p-step-detail" id="step-auth-detail">Scanning…</div></div></div>
+    <div class="p-step"><div class="p-step-icon" id="step-scan-icon">🔍</div><div class="p-step-text"><div class="p-step-label" id="step-scan-label">Detecting deadlines</div><div class="p-step-detail" id="step-scan-detail">Waiting…</div></div></div>
+    <div class="p-step"><div class="p-step-icon" id="step-ai-icon">✦</div><div class="p-step-text"><div class="p-step-label" id="step-ai-label">Organising assignments</div><div class="p-step-detail" id="step-ai-detail">Waiting…</div></div></div>
+  </div>
+</div>
+
+<!-- SCREEN 4: JOIN ROOM -->
+<div id="s-join" class="screen">
+  <div class="join-wrap">
+    <button class="back-btn" onclick="goTo('landing')" style="margin-bottom:20px">← Back</button>
+    <h1 class="join-title">Shared class<br>workspace</h1>
+    <p class="join-sub">One room. Everyone sees the same live document — assignments, progress, announcements. The host controls it all.</p>
+    <div class="card">
+      <div class="card-label">Your name</div>
+      <input class="field" id="j-name" placeholder="Ahmed, Sara, or your full name…"/>
+      <div class="divider">then choose</div>
+      <button class="btn btn-amber" style="margin-bottom:10px" onclick="createRoom()">★ Create a room <span style="opacity:.6;font-size:12px;font-weight:400">(you become host)</span></button>
+      <div class="card-label" style="margin-top:4px">or join existing room</div>
+      <input class="field field-code" id="j-code" placeholder="ENTER CODE" maxlength="6"/>
+      <button class="btn btn-blue" onclick="joinRoom()">Join room →</button>
+    </div>
+    <p style="font-size:12px;color:var(--dim);text-align:center;margin-top:16px;line-height:1.6">No account needed. Data syncs live via Firebase free tier.<br>The host's room stays alive as long as the tab is open.</p>
+  </div>
+</div>
+
+<!-- SCREEN 5: PERSONAL APP -->
+<div id="s-app" class="screen" style="flex-direction:column">
+  <nav>
+    <div class="nav-left">
+      <div class="nav-logo">Class<span>Track</span></div>
+      <div class="user-pill"><div class="user-avatar" id="nav-avatar">?</div><span id="nav-email">—</span></div>
+    </div>
+    <div class="nav-right">
+      <button class="btn-n p" onclick="openAddModal()">+ Add assignment</button>
+      <button class="btn-n" onclick="openPasteModal()">✦ Paste emails</button>
+      <button class="btn-n" id="nav-gmail-btn" onclick="startGmailOAuth()" style="border-color:rgba(66,133,244,0.4);color:#4f8ef7">📧 Scan Gmail</button>
+      <button class="btn-n" id="nav-gmail-rescan" onclick="startGmailOAuth()" style="display:none;border-color:rgba(66,133,244,0.4);color:#4f8ef7">🔄 Rescan Gmail</button>
+      <button class="btn-n" onclick="goTo('join')">👥 Shared room</button>
+      <button class="btn-n" onclick="logout()">Sign out</button>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab on" onclick="switchTab('assignments',this)">Assignments</button>
+      <button class="tab" onclick="switchTab('reminders',this)">Reminders</button>
+      <button class="tab" onclick="switchTab('board',this)">Class Board</button>
+    </div>
+    <!-- ASSIGNMENTS TAB -->
+    <div id="tab-assignments">
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val" id="s-total" style="color:var(--blue)">0</div><div class="stat-lbl">Total</div></div>
+        <div class="stat"><div class="stat-val" id="s-urgent" style="color:var(--red)">0</div><div class="stat-lbl">Due soon</div></div>
+        <div class="stat"><div class="stat-val" id="s-done" style="color:var(--green)">0</div><div class="stat-lbl">Done</div></div>
+        <div class="stat"><div class="stat-val" id="s-pct" style="color:var(--amber)">0%</div><div class="stat-lbl">Complete</div></div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="sec-header">
+        <div class="sec-title">Your assignments</div>
+        <button class="btn-n" onclick="exportICS()">📅 Export .ics</button>
+      </div>
+      <div class="assignments" id="asgn-list">
+        <div class="empty"><div class="empty-icon">📝</div><div>No assignments yet — click <strong>+ Add assignment</strong> or <strong>✦ Paste emails</strong> above</div></div>
+      </div>
+    </div>
+    <!-- REMINDERS TAB -->
+    <div id="tab-reminders" style="display:none">
+      <div class="app-card">
+        <div class="card-title">Browser notifications</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enable to get alerts even when the tab is in the background.</p>
+        <button class="btn-n p" id="notif-btn" onclick="askNotif()">Enable notifications</button>
+        <span id="notif-status" style="font-size:13px;color:var(--muted);margin-left:10px"></span>
+      </div>
+      <div class="app-card">
+        <div class="card-title">Reminder rules</div>
+        <div class="rem-row"><div><div class="rem-lbl">📅 24 hours before due</div><div class="rem-sub">Day-before heads-up</div></div><button class="toggle on" id="t-24h" onclick="toggleRem(this,'24h')"></button></div>
+        <div class="rem-row"><div><div class="rem-lbl">⏰ 2 hours before due</div><div class="rem-sub">Final warning</div></div><button class="toggle on" id="t-2h" onclick="toggleRem(this,'2h')"></button></div>
+        <div class="rem-row"><div><div class="rem-lbl">🚨 Overdue alert</div><div class="rem-sub">Fires when deadline passes without marking done</div></div><button class="toggle on" id="t-ov" onclick="toggleRem(this,'overdue')"></button></div>
+        <div class="rem-row"><div><div class="rem-lbl">☀️ Morning digest (8 AM)</div><div class="rem-sub">Daily summary of today's deadlines</div></div><button class="toggle" id="t-mg" onclick="toggleRem(this,'morning')"></button></div>
+      </div>
+      <div class="app-card">
+        <div class="card-title">Upcoming alerts</div>
+        <div id="rem-schedule"><div style="color:var(--muted);font-size:14px;padding:16px 0;text-align:center">No upcoming reminders</div></div>
+      </div>
+    </div>
+    <!-- CLASS BOARD TAB -->
+    <div id="tab-board" style="display:none">
+      <div class="app-card">
+        <div class="card-title">Share your progress</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Generate a share code and send it to classmates. Paste theirs to see everyone's progress.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn-n p" onclick="genCode()">🔗 Generate my code</button>
+          <button class="btn-n" onclick="document.getElementById('import-area').style.display='block'">📥 Import classmate</button>
+        </div>
+        <div id="my-code-area" style="display:none"><div class="share-box" id="my-code-text"></div><button class="btn-n" onclick="copyCode()">Copy code</button></div>
+        <div id="import-area" style="display:none"><div class="import-row"><input class="import-input" id="import-input" placeholder="Paste classmate's code here…"><button class="btn-n p" onclick="doImport()">Add</button></div></div>
+      </div>
+      <div class="app-card">
+        <div class="card-title">Class board</div>
+        <div class="board-grid" id="board-list"><div style="color:var(--muted);font-size:14px;text-align:center;padding:24px">No classmates yet — share your code!</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 6: SHARED ROOM APP -->
+<div id="s-room" class="screen" style="flex-direction:column">
+  <nav>
+    <div class="nav-l">
+      <div class="nav-logo">Class<span>Track</span></div>
+      <div class="room-pill" id="nav-room-code">—</div>
+      <div id="nav-host-badge" class="host-badge" style="display:none">HOST</div>
+      <div class="online-dot"></div>
+      <div class="online-count"><span id="online-count">1</span> online</div>
+    </div>
+    <div class="nav-r">
+      <div style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:4px 12px 4px 4px;font-size:13px;color:var(--muted)">
+        <div class="avatar" id="room-nav-avatar" style="background:var(--blue)">?</div>
+        <span id="nav-name">—</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="copyRoomCode()">Copy code</button>
+      <button class="btn btn-outline btn-sm" onclick="leaveRoom()">Leave</button>
+    </div>
+  </nav>
+  <div class="room-body">
+    <div class="sidebar">
+      <div class="sidebar-section">Members</div>
+      <div id="member-list"><div style="color:var(--dim);font-size:13px;padding:8px">Loading…</div></div>
+    </div>
+    <div class="room-main">
+      <div class="room-tabs tabs">
+        <button class="tab on" onclick="switchRoomTab('assignments',this)">📋 Assignments</button>
+        <button class="tab" onclick="switchRoomTab('board',this)">👥 Progress Board</button>
+        <button class="tab" onclick="switchRoomTab('announce',this)">📢 Announcements</button>
+      </div>
+
+      <!-- ROOM: ASSIGNMENTS TAB -->
+      <div id="rtab-assignments">
+        <div id="host-controls-assignments" style="display:none">
+          <div class="host-controls">
+            <div class="hc-title">★ Host controls</div>
+            <div class="hc-row">
+              <button class="btn btn-sm btn-green" onclick="addRowPrompt()">+ Add assignment</button>
+              <button class="btn btn-sm btn-outline" onclick="exportCSV()">↓ Export CSV</button>
+              <button class="btn btn-sm btn-danger" onclick="clearDoneRows()">✕ Clear done</button>
+            </div>
+          </div>
+        </div>
+        <div class="sec-hdr">
+          <div class="sec-title">Class assignments</div>
+          <div class="live-tag">Live sync</div>
+        </div>
+        <div class="shared-doc">
+          <div class="doc-toolbar">
+            <span class="doc-toolbar-title">📋 Shared assignment tracker</span>
+            <input class="field" style="width:180px;margin:0;padding:7px 12px;font-size:13px" id="search-input" placeholder="Search…" oninput="filterRows()"/>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="doc-table">
+              <thead><tr>
+                <th style="width:34px"></th>
+                <th>Assignment</th><th>Course</th><th>Due date</th><th>Weight</th><th>Status</th>
+                <th style="width:60px"></th>
+              </tr></thead>
+              <tbody id="assignments-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--dim);font-size:14px">No assignments yet — host will add them</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- ADD ROW FORM (host only, shown via JS) -->
+          <div class="add-row-form" id="add-row-form" style="display:none">
+            <input class="add-field" id="af-title" placeholder="Assignment title *" style="flex:2;min-width:140px"/>
+            <input class="add-field" id="af-course" placeholder="Course"/>
+            <input class="add-field" id="af-due" type="date" style="max-width:140px"/>
+            <input class="add-field" id="af-weight" placeholder="Weight (20%)" style="max-width:110px"/>
+            <button class="btn btn-blue btn-sm" onclick="submitNewRow()">Add</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('add-row-form').style.display='none'">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROOM: PROGRESS BOARD TAB -->
+      <div id="rtab-board" style="display:none">
+        <div class="sec-hdr"><div class="sec-title">Member progress</div><div class="live-tag">Live</div></div>
+        <div id="progress-board"><div style="color:var(--dim);font-size:14px;text-align:center;padding:48px">Loading…</div></div>
+      </div>
+
+      <!-- ROOM: ANNOUNCEMENTS TAB -->
+      <div id="rtab-announce" style="display:none">
+        <div class="sec-hdr"><div class="sec-title">Announcements</div><div class="live-tag">Live</div></div>
+        <div id="announce-list" class="announce-list"></div>
+        <div id="host-announce-input" style="display:none">
+          <div class="announce-input-row">
+            <input class="announce-input" id="announce-text" placeholder="Write an announcement for the class…" onkeydown="if(event.key==='Enter')postAnnounce()"/>
+            <button class="btn btn-blue btn-sm" onclick="postAnnounce()">Post</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <input type="checkbox" id="pin-check" style="cursor:pointer"/>
+            <label for="pin-check" style="font-size:13px;color:var(--muted);cursor:pointer">Pin this announcement</label>
+          </div>
+        </div>
+        <div id="member-announce-note" style="display:none;font-size:13px;color:var(--dim);text-align:center;padding:16px">Only the host can post announcements</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ASSIGNMENT MODAL -->
+<div id="modal-add" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:32px;width:100%;max-width:480px;box-shadow:0 40px 80px rgba(0,0,0,0.5)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:17px;font-weight:600">Add assignment</h3>
+      <button onclick="closeModals()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <input class="email-field" id="ma-title" placeholder="Assignment title *" style="margin-bottom:10px"/>
+    <input class="email-field" id="ma-course" placeholder="Course name (optional)" style="margin-bottom:10px"/>
+    <input class="email-field" id="ma-due" type="datetime-local" style="margin-bottom:10px"/>
+    <input class="email-field" id="ma-weight" placeholder="Weight / grade % (optional)" style="margin-bottom:10px"/>
+    <select class="email-field" id="ma-type" style="margin-bottom:16px">
+      <option value="assignment">Assignment</option>
+      <option value="exam">Exam</option>
+      <option value="quiz">Quiz</option>
+      <option value="project">Project</option>
+      <option value="report">Report</option>
+      <option value="other">Other</option>
+    </select>
+    <input class="email-field" id="ma-notes" placeholder="Notes (optional)" style="margin-bottom:20px"/>
+    <button class="btn-google" onclick="submitManualAdd()">Add assignment</button>
+  </div>
+</div>
+
+<!-- PASTE EMAILS MODAL -->
+<div id="modal-paste" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:32px;width:100%;max-width:560px;box-shadow:0 40px 80px rgba(0,0,0,0.5)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="font-size:17px;font-weight:600">✦ Paste emails to detect assignments</h3>
+      <button onclick="closeModals()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">Copy and paste the body of assignment emails. ClassTrack will detect deadlines, course names, and weights — all locally, no internet needed.</p>
+    <textarea id="mp-text" class="email-field" rows="8" placeholder="Paste one or more emails here…&#10;&#10;Example:&#10;From: dr.hassan@university.edu&#10;Subject: Assignment 2 — Linked Lists&#10;Due: April 5, 2026 at 11:59 PM. Worth 15%." style="resize:vertical;font-size:13px;line-height:1.5;margin-bottom:16px"></textarea>
+    <button class="btn-google" onclick="parsePastedEmails()" style="background:linear-gradient(135deg,var(--cyan),var(--blue))">✦ Detect &amp; import</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="ti"></span><span id="tm"></span></div>
+
+<!-- FIREBASE (shared room) -->
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getDatabase,ref,set,get,onValue,push,update,remove,serverTimestamp,onDisconnect}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const firebaseConfig={apiKey: "AIzaSyD8FW_DrQVvMnTHwMfNVvB7TswmJvWjiAc",
+                      authDomain: "classtracker-7162f.firebaseapp.com",
+                      databaseURL: "https://classtracker-7162f-default-rtdb.europe-west1.firebasedatabase.app",
+                      projectId: "classtracker-7162f",
+                      storageBucket: "classtracker-7162f.firebasestorage.app",
+                      messagingSenderId: "149385814310",
+                      appId: "1:149385814310:web:1dca2dc01fcbb630ce21e7",
+                      measurementId: "G-8CPTRHXS2F"}
+window.createRoom=async function(){
+  const name=document.getElementById('j-name').value.trim();
+  if(!name){toast('⚠','Enter your name first');return;}
+  myName=name;myId=uid();isHost=true;roomCode=Math.random().toString(36).substring(2,8).toUpperCase();
+  initFB();
+  if(!window._lm){await set(ref(db,`rooms/${roomCode}`),{host:myId,hostName:myName,created:serverTimestamp(),members:{[myId]:{name:myName,color:RC[0],online:true,isHost:true,joinedAt:serverTimestamp()}},assignments:{},announcements:{}});setupP();subAll();}
+  else{initLR();}
+  enterRoom();toast('★',`Room ${roomCode} created! Share the code.`);
+};
+window.joinRoom=async function(){
+  const name=document.getElementById('j-name').value.trim(),code=document.getElementById('j-code').value.trim().toUpperCase();
+  if(!name){toast('⚠','Enter your name first');return;}
+  if(code.length!==6){toast('⚠','Enter the 6-letter room code');return;}
+  myName=name;myId=uid();isHost=false;roomCode=code;initFB();
+  if(!window._lm){const s=await get(ref(db,`rooms/${roomCode}`));if(!s.exists()){toast('✗','Room not found');return;}const ci=Object.keys(s.val().members||{}).length%RC.length;await set(ref(db,`rooms/${roomCode}/members/${myId}`),{name:myName,color:RC[ci],online:true,joinedAt:serverTimestamp()});setupP();subAll();}
+  else{initLR();}
+  enterRoom();toast('✓',`Joined room ${roomCode}`);
+};
+function setupP(){if(window._lm)return;const r=ref(db,`rooms/${roomCode}/members/${myId}/online`);set(r,true);onDisconnect(r).set(false);}
+function subAll(){
+  if(window._lm)return;
+  const u1=onValue(ref(db,`rooms/${roomCode}/members`),s=>{const m=s.val()||{};rMembers(m);rBoard(m);document.getElementById('online-count').textContent=Object.values(m).filter(x=>x.online).length;});
+  const u2=onValue(ref(db,`rooms/${roomCode}/assignments`),s=>{rTable(s.val()||{});});
+  const u3=onValue(ref(db,`rooms/${roomCode}/announcements`),s=>{rAnnounce(s.val()||{});});
+  unsubscribers=[u1,u2,u3];
+}
+function enterRoom(){
+  goTo('room');
+  document.getElementById('nav-room-code').textContent=roomCode;
+  document.getElementById('nav-name').textContent=myName;
+  document.getElementById('room-nav-avatar').textContent=myName.substring(0,2).toUpperCase();
+  document.getElementById('room-nav-avatar').style.background=RC[0];
+  if(isHost){
+    document.getElementById('nav-host-badge').style.display='flex';
+    document.getElementById('host-controls-assignments').style.display='block';
+    document.getElementById('host-announce-input').style.display='block';
+    document.getElementById('member-announce-note').style.display='none';
+  }else{
+    document.getElementById('host-controls-assignments').style.display='none';
+    document.getElementById('host-announce-input').style.display='none';
+    document.getElementById('member-announce-note').style.display='block';
+  }
+}
+function rMembers(members){
+  const el=document.getElementById('member-list');
+  const entries=Object.entries(members).sort((a,b)=>(b[1].online?1:0)-(a[1].online?1:0));
+  el.innerHTML=entries.map(([id,m])=>`<div class="member-row" onclick="this.closest('#member-list').querySelectorAll('.member-row').forEach(r=>r.classList.remove('selected'));this.classList.add('selected')">
+    <div class="status-dot ${m.online?'dot-green':'dot-gray'}"></div>
+    <div class="avatar" style="width:28px;height:28px;font-size:11px;background:${m.color}">${(m.name||'?').substring(0,2).toUpperCase()}</div>
+    <div class="member-info"><div class="member-name">${esc(m.name)}</div><div class="member-sub">${m.online?'Online':'Offline'}</div></div>
+    ${m.isHost?'<span class="member-badge badge-host">HOST</span>':''}
+  </div>`).join('');
+}
+window._asgns={};
+function rTable(data){
+  window._asgns=data;
+  const tbody=document.getElementById('assignments-tbody');
+  const rows=Object.entries(data);
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--dim);font-size:14px">${isHost?'Click &quot;+ Add assignment&quot; to get started':'No assignments yet — host will add them'}</td></tr>`;return;}
+  const srch=(document.getElementById('search-input').value||'').toLowerCase();
+  const filt=rows.filter(([,a])=>!srch||(a.title||'').toLowerCase().includes(srch)||(a.course||'').toLowerCase().includes(srch));
+  filt.sort((a,b)=>{if(!a[1].due)return 1;if(!b[1].due)return -1;return new Date(a[1].due)-new Date(b[1].due);});
+  tbody.innerHTML=filt.map(([id,a])=>{
+    const uc=a.status==='done'?'var(--b2)':!a.due?'var(--blue)':()=>{const d=new Date(a.due)-new Date();return d<0||d<172800000?'var(--red)':d<432000000?'var(--amber)':'var(--blue)';};
+    const urgColor=typeof uc==='function'?uc():uc;
+    return`<tr>
+      <td><div style="width:3px;height:36px;background:${urgColor};margin:0 auto;border-radius:2px"></div></td>
+      <td><input class="cell-input" value="${esc(a.title||'')}" ${isHost?'':'disabled'} onchange="updateCell('${id}','title',this.value)" placeholder="Title…"/></td>
+      <td><input class="cell-input" value="${esc(a.course||'')}" ${isHost?'':'disabled'} onchange="updateCell('${id}','course',this.value)" placeholder="Course…"/></td>
+      <td><input class="cell-input" type="date" value="${a.due||''}" ${isHost?'':'disabled'} onchange="updateCell('${id}','due',this.value)"/></td>
+      <td><input class="cell-input" value="${esc(a.weight||'')}" ${isHost?'':'disabled'} onchange="updateCell('${id}','weight',this.value)" placeholder="20%…" style="max-width:90px"/></td>
+      <td><select class="cell-select" onchange="updateCell('${id}','status',this.value)">
+        <option value="pending" ${(a.status||'pending')==='pending'?'selected':''}>⏳ Pending</option>
+        <option value="in-progress" ${a.status==='in-progress'?'selected':''}>🔄 In progress</option>
+        <option value="done" ${a.status==='done'?'selected':''}>✓ Done</option>
+        <option value="late" ${a.status==='late'?'selected':''}>⚠ Late</option>
+      </select></td>
+      <td><div class="row-actions">${isHost?`<button class="btn btn-sm btn-danger" style="padding:4px 8px;font-size:12px" onclick="deleteRow('${id}')">✕</button>`:''}</div></td>
+    </tr>`;
+  }).join('');
+}
+window.filterRows=function(){rTable(window._asgns);};
+function rBoard(members){
+  const el=document.getElementById('progress-board');
+  const asgns=Object.values(window._asgns||{});
+  const total=asgns.length;
+  const entries=Object.entries(members);
+  if(!entries.length){el.innerHTML='<div style="color:var(--dim);padding:32px;text-align:center">No members yet</div>';return;}
+  el.innerHTML=entries.map(([id,m],i)=>{
+    const done=asgns.filter(a=>a.status==='done').length;
+    const pct=total?Math.round(done/total*100):0;
+    const col=m.color||RC[i%RC.length];
+    return`<div class="member-detail">
+      <div class="md-header">
+        <div class="md-avatar" style="background:${col}">${(m.name||'?').substring(0,2).toUpperCase()}</div>
+        <div><div class="md-name">${esc(m.name)} ${m.isHost?'<span class="member-badge badge-host" style="font-size:10px">HOST</span>':''}</div>
+        <div class="md-sub"><span class="status-dot ${m.online?'dot-green':'dot-gray'}"></span>${m.online?'Online now':'Offline'}</div></div>
+      </div>
+      <div class="md-stats">
+        <div class="md-stat"><div class="md-stat-val" style="color:var(--blue)">${total}</div><div class="md-stat-lbl">Assignments</div></div>
+        <div class="md-stat"><div class="md-stat-val" style="color:var(--green)">${done}</div><div class="md-stat-lbl">Done</div></div>
+        <div class="md-stat"><div class="md-stat-val" style="color:var(--amber)">${pct}%</div><div class="md-stat-lbl">Progress</div></div>
+      </div>
+      <div style="height:4px;background:var(--b1);border-radius:2px;margin-top:14px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:2px;transition:width .5s"></div></div>
+    </div>`;
+  }).join('');
+}
+function rAnnounce(data){
+  const el=document.getElementById('announce-list');
+  const items=Object.entries(data).sort((a,b)=>{if(a[1].pinned&&!b[1].pinned)return -1;if(b[1].pinned&&!a[1].pinned)return 1;return(b[1].ts||0)-(a[1].ts||0);});
+  if(!items.length){el.innerHTML='<div style="color:var(--dim);font-size:14px;text-align:center;padding:32px">No announcements yet</div>';return;}
+  el.innerHTML=items.map(([id,a])=>`<div class="announce-card ${a.pinned?'pinned':''}">
+    <div class="announce-meta"><span class="announce-author">${esc(a.author)}</span>${a.pinned?'<span class="announce-pin">📌 Pinned</span>':''}<span class="announce-time">${fmtT(a.ts)}</span>${isHost?`<button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px;margin-left:auto" onclick="deleteAnnounce('${id}')">✕</button>`:''}</div>
+    <div class="announce-text">${esc(a.text)}</div>
+  </div>`).join('');
+}
+// HOST ACTIONS
+window.addRowPrompt=function(){document.getElementById('add-row-form').style.display='flex';document.getElementById('af-title').focus();};
+window.submitNewRow=async function(){
+  const title=document.getElementById('af-title').value.trim();
+  if(!title){toast('⚠','Enter a title');return;}
+  const row={title,course:document.getElementById('af-course').value.trim(),due:document.getElementById('af-due').value,weight:document.getElementById('af-weight').value.trim(),status:'pending',addedBy:myName,addedAt:Date.now()};
+  if(!window._lm)await push(ref(db,`rooms/${roomCode}/assignments`),row);else lPush('assignments',row);
+  ['af-title','af-course','af-due','af-weight'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-row-form').style.display='none';
+  toast('✓','Assignment added to shared doc!');
+};
+window.updateCell=async function(id,field,val){if(!window._lm)await update(ref(db,`rooms/${roomCode}/assignments/${id}`),{[field]:val});else lUpdate('assignments',id,{[field]:val});};
+window.deleteRow=async function(id){if(!confirm('Remove this assignment for everyone?'))return;if(!window._lm)await remove(ref(db,`rooms/${roomCode}/assignments/${id}`));else lDel('assignments',id);toast('🗑','Removed');};
+window.clearDoneRows=async function(){
+  if(!confirm('Clear all completed assignments for everyone?'))return;
+  for(const[id,a]of Object.entries(window._asgns)){if(a.status==='done'){if(!window._lm)await remove(ref(db,`rooms/${roomCode}/assignments/${id}`));else lDel('assignments',id);}}
+  toast('🗑','Cleared completed assignments');
+};
+window.postAnnounce=async function(){
+  const text=document.getElementById('announce-text').value.trim();if(!text)return;
+  const pinned=document.getElementById('pin-check').checked;
+  const a={text,author:myName,pinned,ts:Date.now()};
+  if(!window._lm)await push(ref(db,`rooms/${roomCode}/announcements`),a);else lPush('announcements',a);
+  document.getElementById('announce-text').value='';document.getElementById('pin-check').checked=false;
+  toast('📢','Announcement posted!');
+};
+window.deleteAnnounce=async function(id){if(!window._lm)await remove(ref(db,`rooms/${roomCode}/announcements/${id}`));else lDel('announcements',id);};
+window.exportCSV=function(){
+  const rows=[['Title','Course','Due','Weight','Status']];
+  Object.values(window._asgns).forEach(a=>rows.push([a.title||'',a.course||'',a.due||'',a.weight||'',a.status||'']));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));link.download=`classtrack-${roomCode}.csv`;link.click();
+  toast('↓','CSV exported');
+};
+// LOCAL SIM
+let _L={members:{},assignments:{},announcements:{}};
+function initLR(){window._lm=true;_L.members[myId]={name:myName,color:RC[0],online:true,isHost:true};bcast();}
+function lPush(c,d){const id=uid();_L[c][id]=d;bcast();return id;}
+function lUpdate(c,id,u){if(_L[c][id])Object.assign(_L[c][id],u);bcast();}
+function lDel(c,id){delete _L[c][id];bcast();}
+function bcast(){rMembers(_L.members);rTable(_L.assignments);rAnnounce(_L.announcements);rBoard(_L.members);document.getElementById('online-count').textContent=Object.values(_L.members).filter(m=>m.online).length;}
+window.copyRoomCode=function(){navigator.clipboard.writeText(roomCode);toast('📋',`Code "${roomCode}" copied!`);};
+window.leaveRoom=function(){if(!window._lm)set(ref(db,`rooms/${roomCode}/members/${myId}/online`),false);unsubscribers.forEach(u=>typeof u==='function'&&u());goTo('join');};
+window.switchRoomTab=function(name,btn){
+  ['assignments','board','announce'].forEach(t=>document.getElementById('rtab-'+t).style.display='none');
+  document.querySelectorAll('#s-room .tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('rtab-'+name).style.display='block';if(btn)btn.classList.add('on');
+  if(name==='board')rBoard(window._lm?(_L.members||{}):{});
+};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substring(2);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtT(ts){if(!ts)return'';return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function toast(icon,msg){document.getElementById('ti').textContent=icon+' ';document.getElementById('tm').textContent=msg;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+window.addEventListener('DOMContentLoaded',()=>{if(firebaseConfig.apiKey==='AIzaSyDemo-ReplaceWithYourOwnFirebaseKey')console.warn('⚠ Running in local demo mode.');});
+</script>
+
+<!-- PERSONAL APP LOGIC -->
+<script>
+let userEmail='';
+let assignments=JSON.parse(localStorage.getItem('ct_asgn')||'[]');
+let reminders=JSON.parse(localStorage.getItem('ct_rem')||'{"24h":true,"2h":true,"overdue":true,"morning":false}');
+let board=JSON.parse(localStorage.getItem('ct_board')||'[]');
+const COLORS=['#4f8ef7','#9b6dff','#2dd4a0','#f5a623','#f06464','#38bdf8','#f472b6','#a3e635'];
+
+function goTo(name){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-'+name).classList.add('active');}
+
+// ── LOCAL PARSING ENGINE (no external APIs) ──────────────────────────────────
+
+// Month name → number map for parsing
+const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,
+  jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+
+function guessYear(month, day) {
+  const now = new Date();
+  const y = now.getFullYear();
+  // Try current year first, if the date has already passed by >30 days, use next year
+  const candidate = new Date(y, month - 1, day);
+  if (candidate < new Date(now.getTime() - 30 * 86400000)) return y + 1;
+  return y;
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  // ISO format
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+  // "April 5, 2026" or "5 April 2026"
+  let m;
+  m = str.match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/i);
+  if (m) { const mo = MONTHS[m[2].toLowerCase()]; if (mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`; }
+  m = str.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/i);
+  if (m) { const mo = MONTHS[m[1].toLowerCase()]; if (mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; }
+  // "April 5" no year
+  m = str.match(/([a-z]+)\s+(\d{1,2})(?!\s*\d{4})/i);
+  if (m) { const mo = MONTHS[m[1].toLowerCase()]; if (mo) { const y = guessYear(mo, parseInt(m[2])); return `${y}-${String(mo).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; } }
+  // MM/DD or MM/DD/YY or MM/DD/YYYY
+  m = str.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (m) { const yr = m[3] ? (m[3].length === 2 ? '20'+m[3] : m[3]) : String(guessYear(parseInt(m[1]), parseInt(m[2]))); return `${yr}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`; }
+  return null;
+}
+
+function parseTime(str) {
+  if (!str) return 'T23:59:00';
+  const m = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if (!m) return 'T23:59:00';
+  let h = parseInt(m[1]), min = m[2] ? parseInt(m[2]) : 0;
+  const ap = (m[3] || '').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  return `T${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}:00`;
+}
+
+function extractWeight(text) {
+  const m = text.match(/(\d+(?:\.\d+)?)\s*%/);
+  return m ? m[1] + '%' : '';
+}
+
+function extractType(text) {
+  const t = text.toLowerCase();
+  if (/\b(midterm|final|exam)\b/.test(t)) return 'exam';
+  if (/\bquiz\b/.test(t)) return 'quiz';
+  if (/\bproject\b/.test(t)) return 'project';
+  if (/\breport\b/.test(t)) return 'report';
+  return 'assignment';
+}
+
+// Parse pasted/raw email text into assignment objects (fully local)
+function parseEmailText(text) {
+  const results = [];
+  // Split on email separators, "From:" lines, or "---"
+  const chunks = text.split(/(?=From:|---|\n\n(?=Subject:))/i).filter(c => c.trim().length > 20);
+
+  // Keywords that signal a deadline sentence
+  const DEADLINE_RE = /\b(due|deadline|submit|submission|exam|quiz|midterm|final|assignment|homework|project|report)\b/i;
+  // Date patterns
+  const DATE_PAT = /(?:(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}(?:,?\s+\d{4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)(?:\s+\d{4})?|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/i;
+  const TIME_PAT = /\b(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i;
+
+  for (const chunk of chunks) {
+    const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+    let subjectLine = '', bodyText = chunk;
+
+    // Try to extract Subject: line
+    for (const l of lines) {
+      if (/^subject:/i.test(l)) { subjectLine = l.replace(/^subject:\s*/i, '').trim(); break; }
+    }
+
+    // Find sentences that look like deadline info
+    const sentences = bodyText.split(/(?<=[.!?])\s+/);
+    for (const sent of sentences) {
+      if (!DEADLINE_RE.test(sent)) continue;
+      const dm = sent.match(DATE_PAT);
+      if (!dm) continue;
+
+      const dateStr = parseDate(dm[0]);
+      if (!dateStr) continue;
+      const tm = sent.match(TIME_PAT);
+      const timeStr = parseTime(tm ? tm[1] : null);
+
+      // Build a title: prefer subject line, else first 8 words of sentence
+      let title = subjectLine || sent.replace(DATE_PAT, '').replace(TIME_PAT, '').replace(/\s+/g, ' ').trim().split(' ').slice(0, 8).join(' ');
+      // Clean up title — remove leading "due", "deadline:", etc.
+      title = title.replace(/^(re:|fw:|fwd:|deadline[:\s]+|due[:\s]+)/i, '').trim();
+      if (title.length < 3) continue;
+
+      // Course: look for "From:" line and extract sender name, or look for a dash in subject
+      let course = '';
+      const fromM = chunk.match(/^from:.*?<?\s*([\w.]+@[\w.]+)/im);
+      const dashM = subjectLine.match(/[-–]\s*(.+)$/);
+      if (dashM) course = dashM[1].trim().substring(0, 40);
+
+      results.push({
+        id: String(Date.now() + Math.random()),
+        title: title.substring(0, 80),
+        course,
+        due: dateStr + timeStr,
+        weight: extractWeight(sent + ' ' + subjectLine),
+        type: extractType(sent + ' ' + subjectLine),
+        notes: '',
+        done: false,
+        calAdded: false,
+      });
+    }
+  }
+  return dedupeByTitle(results);
+}
+
+function dedupeByTitle(arr) {
+  const seen = new Set();
+  return arr.filter(a => {
+    const key = a.title.toLowerCase().substring(0, 30);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// ── FLOW FUNCTIONS ────────────────────────────────────────────────────────────
+
+function startFlow() {
+  const val = document.getElementById('login-email').value.trim();
+  if (!val) { toast('⚠', 'Enter your name or email first'); return; }
+  userEmail = val;
+  localStorage.setItem('ct_email', val);
+  ['24h','2h','overdue','morning'].forEach(k => {
+    const b = document.getElementById('t-' + {overdue:'ov',morning:'mg','24h':'24h','2h':'2h'}[k]);
+    if (b) b.classList.toggle('on', !!reminders[k]);
+  });
+  showApp();
+}
+
+function startFlowWithPaste() {
+  const val = document.getElementById('login-email').value.trim();
+  if (!val) { toast('⚠', 'Enter your name or email first'); return; }
+  userEmail = val;
+  localStorage.setItem('ct_email', val);
+  const pasteText = document.getElementById('paste-emails')?.value?.trim();
+  if (pasteText) {
+    runLocalPipeline(pasteText);
+  } else {
+    showApp();
+  }
+}
+
+async function runLocalPipeline(text) {
+  goTo('processing');
+  resetSteps();
+  document.getElementById('proc-title').textContent = 'Detecting assignments…';
+  await delay(400);
+
+  stepDone('auth', 'Text received');
+  stepActive('scan');
+  await delay(500);
+
+  const found = parseEmailText(text || getDemoEmails());
+  stepDone('scan', `Found ${found.length} potential deadline${found.length !== 1 ? 's' : ''}`);
+  stepActive('ai');
+  await delay(600);
+
+  const seen = new Set(assignments.map(a => a.id));
+  found.forEach(a => { if (!seen.has(a.id)) assignments.push(a); });
+  stepDone('ai', `Added ${found.length} assignment${found.length !== 1 ? 's' : ''}`);
+
+  saveState(); scheduleNotifs();
+  await delay(500);
+  showApp();
+  if (found.length) toast('✓', `Imported ${found.length} assignment${found.length !== 1 ? 's' : ''}!`);
+  else toast('ℹ', 'No deadlines detected. Try adding them manually.');
+}
+
+async function rescan() { openPasteModal(); }
+
+function openAddModal() {
+  document.getElementById('modal-add').style.display = 'flex';
+  document.getElementById('ma-title').focus();
+}
+function openPasteModal() {
+  document.getElementById('modal-paste').style.display = 'flex';
+  document.getElementById('mp-text').focus();
+}
+function closeModals() {
+  document.getElementById('modal-add').style.display = 'none';
+  document.getElementById('modal-paste').style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+
+function submitManualAdd() {
+  const title = document.getElementById('ma-title').value.trim();
+  if (!title) { toast('⚠', 'Title is required'); return; }
+  const due = document.getElementById('ma-due').value;
+  const a = {
+    id: String(Date.now() + Math.random()),
+    title,
+    course: document.getElementById('ma-course').value.trim(),
+    due: due ? due.replace('T', 'T').substring(0, 16) + ':00' : null,
+    weight: document.getElementById('ma-weight').value.trim(),
+    type: document.getElementById('ma-type').value,
+    notes: document.getElementById('ma-notes').value.trim(),
+    done: false, calAdded: false,
+  };
+  assignments.push(a);
+  saveState(); scheduleNotifs(); renderAssignments();
+  closeModals();
+  // Clear fields
+  ['ma-title','ma-course','ma-due','ma-weight','ma-notes'].forEach(id => document.getElementById(id).value = '');
+  toast('✓', 'Assignment added!');
+}
+
+function parsePastedEmails() {
+  const text = document.getElementById('mp-text').value.trim();
+  if (!text) { toast('⚠', 'Paste some email text first'); return; }
+  closeModals();
+  runLocalPipeline(text);
+}
+
+
+// ── GMAIL OAUTH + SCANNING ────────────────────────────────────────────────────
+const GMAIL_CLIENT_ID = '827497634968-oqjbc9879s2sd5dmnirp8ehrs8e3cks7.apps.googleusercontent.com';
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.metadata';
+let _gmailToken = null;
+
+function startGmailOAuth() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    toast('✗', 'Google sign-in not loaded. Check your internet connection.');
+    return;
+  }
+  // If we already have a token, go straight to scanning
+  if (_gmailToken) { runGmailScan(_gmailToken); return; }
+
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CLIENT_ID,
+    scope: GMAIL_SCOPE,
+    callback: (resp) => {
+      if (resp.error) { toast('✗', 'Sign-in cancelled or failed: ' + resp.error); return; }
+      _gmailToken = resp.access_token;
+      // Set email from id_hint if available, else use a placeholder
+      if (!userEmail) {
+        userEmail = 'gmail-user';
+        localStorage.setItem('ct_email', userEmail);
+      }
+      runGmailScan(_gmailToken);
+    },
+  });
+  client.requestAccessToken({ prompt: 'consent' });
+}
+
+async function runGmailScan(token) {
+  goTo('processing');
+  resetSteps();
+
+  // Step 1: auth
+  document.getElementById('proc-title').textContent = 'Scanning Gmail…';
+  document.getElementById('proc-sub').textContent = 'Fetching assignment-related emails';
+  document.getElementById('step-auth-label').textContent = 'Connecting to Gmail';
+  document.getElementById('step-scan-label').textContent = 'Fetching emails';
+  document.getElementById('step-ai-label').textContent = 'Detecting assignments';
+
+  stepActive('auth');
+  await delay(400);
+
+  // Fetch message IDs matching academic keywords
+  const query = encodeURIComponent('subject:(assignment OR deadline OR due OR homework OR exam OR quiz OR project OR midterm OR final OR submit) newer_than:60d');
+  let msgIds = [];
+  try {
+    const listRes = await fetch(
+      `https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${query}`,
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    if (!listRes.ok) throw new Error('Gmail API error: ' + listRes.status);
+    const listData = await listRes.json();
+    msgIds = (listData.messages || []).map(m => m.id);
+
+    // Also try to get user email from profile
+    try {
+      const profileRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/profile', { headers: { Authorization: 'Bearer ' + token } });
+      const profile = await profileRes.json();
+      if (profile.emailAddress) {
+        userEmail = profile.emailAddress;
+        localStorage.setItem('ct_email', userEmail);
+        document.getElementById('nav-email').textContent = userEmail;
+        document.getElementById('nav-avatar').textContent = userEmail.substring(0,2).toUpperCase();
+      }
+    } catch(e) {}
+
+  } catch(e) {
+    stepDone('auth', 'Connection failed');
+    await delay(300);
+    goTo('login');
+    toast('✗', 'Gmail access failed. Try signing in again.');
+    return;
+  }
+
+  stepDone('auth', `Connected — found ${msgIds.length} candidate email${msgIds.length !== 1 ? 's' : ''}`);
+  stepActive('scan');
+  document.getElementById('step-scan-detail').textContent = `Fetching ${msgIds.length} emails…`;
+  await delay(300);
+
+  // Step 2: fetch each message (subject + snippet only — no full body read)
+  const emailTexts = [];
+  const batchSize = 10;
+  for (let i = 0; i < Math.min(msgIds.length, 50); i += batchSize) {
+    const batch = msgIds.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(id =>
+      fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+        { headers: { Authorization: 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : null).catch(() => null)
+    ));
+    for (const msg of results) {
+      if (!msg) continue;
+      const headers = (msg.payload?.headers || []);
+      const subject = headers.find(h => h.name === 'Subject')?.value || '';
+      const from = headers.find(h => h.name === 'From')?.value || '';
+      const snippet = msg.snippet || '';
+      emailTexts.push(`From: ${from}\nSubject: ${subject}\n${snippet}`);
+    }
+    document.getElementById('step-scan-detail').textContent = `Read ${Math.min(i + batchSize, msgIds.length)} of ${msgIds.length}…`;
+    await delay(100);
+  }
+
+  stepDone('scan', `Read ${emailTexts.length} email${emailTexts.length !== 1 ? 's' : ''}`);
+  stepActive('ai');
+  await delay(400);
+
+  // Step 3: parse with existing engine
+  const combined = emailTexts.join('\n\n---\n\n');
+  const found = parseEmailText(combined);
+
+  const seen = new Set(assignments.map(a => a.id));
+  let added = 0;
+  found.forEach(a => { if (!seen.has(a.id)) { assignments.push(a); added++; } });
+  stepDone('ai', `Added ${added} new assignment${added !== 1 ? 's' : ''}`);
+
+  saveState(); scheduleNotifs();
+  ['24h','2h','overdue','morning'].forEach(k => {
+    const b = document.getElementById('t-' + {overdue:'ov',morning:'mg','24h':'24h','2h':'2h'}[k]);
+    if (b) b.classList.toggle('on', !!reminders[k]);
+  });
+
+  await delay(600);
+  showApp();
+  if (added > 0) toast('✓', `Imported ${added} assignment${added !== 1 ? 's' : ''} from Gmail!`);
+  else toast('ℹ', 'No new deadlines found in Gmail. Try adding manually.');
+}
+
+function resetSteps() {
+  ['auth','scan','ai'].forEach(n => {
+    const ic = document.getElementById('step-' + n + '-icon');
+    ic.className = 'p-step-icon';
+    ic.textContent = {auth:'📝', scan:'🔍', ai:'✦'}[n];
+    document.getElementById('step-' + n + '-detail').textContent = 'Waiting…';
+  });
+  // Reset labels to defaults
+  const labels = {auth:'Reading text', scan:'Detecting deadlines', ai:'Organising assignments'};
+  Object.entries(labels).forEach(([n,l]) => {
+    const el = document.getElementById('step-' + n + '-label');
+    if (el) el.textContent = l;
+  });
+  document.getElementById('proc-title').textContent = 'Detecting assignments…';
+  document.getElementById('proc-sub').textContent = 'Parsing your text for deadlines';
+}
+
+function renderAssignments(){
+  const el=document.getElementById('asgn-list');
+  const total=assignments.length,done=assignments.filter(a=>a.done).length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-urgent').textContent=assignments.filter(a=>!a.done&&a.due&&(new Date(a.due)-new Date())<172800000).length;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-pct').textContent=total?Math.round(done/total*100)+'%':'0%';
+  document.getElementById('prog-fill').style.width=total?(done/total*100)+'%':'0%';
+  if(!assignments.length){el.innerHTML='<div class="empty"><div class="empty-icon">📝</div><div>No assignments yet — click <strong>+ Add assignment</strong> or <strong>✦ Paste emails</strong> above</div></div>';return;}
+  const sorted=[...assignments].sort((a,b)=>{if(a.done&&!b.done)return 1;if(!a.done&&b.done)return -1;if(!a.due)return 1;if(!b.due)return -1;return new Date(a.due)-new Date(b.due);});
+  el.innerHTML=sorted.map(a=>{
+    const now=new Date(),due=a.due?new Date(a.due):null,diff=due?due-now:null;
+    const urg=a.done?'done':!due?'ok':diff<0?'critical':diff<172800000?'critical':diff<432000000?'soon':'ok';
+    const dtag=due?`<span class="tag tag-date-${urg==='critical'?'crit':urg==='soon'?'soon':'ok'}">📅 ${fmtD(due)}</span>`:'';
+    const cd=due&&!a.done?`<span class="acountdown">${cdown(diff)}</span>`:'';
+    return`<div class="acard urgency-${urg}">
+      <div class="acheck ${a.done?'on':''}" onclick="toggleDone('${a.id}')"></div>
+      <div class="abody">
+        <div class="atitle ${a.done?'struck':''}">${esc(a.title)}</div>
+        <div class="ameta" style="margin-top:5px">
+          ${a.course?`<span class="tag tag-course">${esc(a.course)}</span>`:''}
+          ${dtag}${a.weight?`<span class="tag tag-weight">${esc(a.weight)}</span>`:''}
+          ${a.calAdded?'<span class="tag tag-cal">✓ Calendar</span>':''}${cd}
+        </div>
+        ${a.notes?`<div style="font-size:12px;color:var(--muted);margin-top:5px">${esc(a.notes)}</div>`:''}
+      </div>
+      <button class="adel" onclick="delA('${a.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function toggleDone(id){const a=assignments.find(x=>x.id==id);if(a){a.done=!a.done;saveState();renderAssignments();}}
+function delA(id){assignments=assignments.filter(x=>x.id!=id);saveState();renderAssignments();}
+function cdown(ms){if(ms===null)return'';if(ms<0)return'⚠ Overdue';const d=Math.floor(ms/86400000),h=Math.floor((ms%86400000)/3600000);return d>0?`${d}d ${h}h left`:`${h}h left`;}
+function fmtD(d){try{return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch{return String(d);}}
+function toggleRem(btn,key){reminders[key]=!reminders[key];btn.classList.toggle('on',reminders[key]);saveState();scheduleNotifs();}
+function askNotif(){Notification.requestPermission().then(p=>{const s=document.getElementById('notif-status');if(p==='granted'){s.textContent='✓ Enabled';s.style.color='var(--green)';document.getElementById('notif-btn').style.display='none';scheduleNotifs();toast('✓','Notifications enabled!');}else{s.textContent='Blocked in browser';s.style.color='var(--red)';}});}
+function scheduleNotifs(){
+  if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+  assignments.filter(a=>!a.done&&a.due).forEach(a=>{
+    const due=new Date(a.due),now=new Date();
+    if(reminders['24h']){const t=new Date(due-86400000);if(t>now)setTimeout(()=>new Notification('📅 24h Reminder',{body:`"${a.title}" due in 24 hours!`,icon:'icons/icon-192.png'}),t-now);}
+    if(reminders['2h']){const t=new Date(due-7200000);if(t>now)setTimeout(()=>new Notification('⏰ 2h Reminder',{body:`"${a.title}" due in 2 hours!`,icon:'icons/icon-192.png'}),t-now);}
+    if(reminders['overdue']&&due>now)setTimeout(()=>new Notification('🚨 Overdue!',{body:`"${a.title}" deadline just passed!`,icon:'icons/icon-192.png'}),due-now);
+  });
+}
+function renderRemSchedule(){
+  const el=document.getElementById('rem-schedule');
+  const upcoming=assignments.filter(a=>!a.done&&a.due).sort((a,b)=>new Date(a.due)-new Date(b.due)).slice(0,6);
+  if(!upcoming.length){el.innerHTML='<div style="color:var(--muted);font-size:14px;padding:16px 0;text-align:center">No upcoming deadlines</div>';return;}
+  el.innerHTML=upcoming.flatMap(a=>{const due=new Date(a.due);return[
+    reminders['24h']?`<div class="rem-row"><div><div class="rem-lbl" style="font-size:13px">24h — <strong>${esc(a.title)}</strong></div><div class="rem-sub">${fmtD(new Date(due-86400000))}</div></div></div>`:'',
+    reminders['2h']?`<div class="rem-row"><div><div class="rem-lbl" style="font-size:13px">2h — <strong>${esc(a.title)}</strong></div><div class="rem-sub">${fmtD(new Date(due-7200000))}</div></div></div>`:''
+  ];}).filter(Boolean).join('');
+}
+function genCode(){
+  const total=assignments.length,done=assignments.filter(x=>x.done).length;
+  const payload={name:userEmail.split('@')[0],email:userEmail,total,done,pct:total?Math.round(done/total*100):0,ts:Date.now()};
+  document.getElementById('my-code-text').textContent=btoa(JSON.stringify(payload));
+  document.getElementById('my-code-area').style.display='block';
+}
+function copyCode(){navigator.clipboard.writeText(document.getElementById('my-code-text').textContent);toast('📋','Copied!');}
+function doImport(){
+  try{const d=JSON.parse(atob(document.getElementById('import-input').value.trim()));board=board.filter(b=>b.email!==d.email);board.push(d);saveState();renderBoard();document.getElementById('import-input').value='';document.getElementById('import-area').style.display='none';toast('✓',`${d.name} added to board!`);}
+  catch{toast('✗','Invalid code');}
+}
+function renderBoard(){
+  const el=document.getElementById('board-list');
+  if(!board.length){el.innerHTML='<div style="color:var(--muted);font-size:14px;text-align:center;padding:24px">No classmates yet — share your code!</div>';return;}
+  el.innerHTML=board.map((b,i)=>{const col=COLORS[i%COLORS.length];return`<div class="bcard">
+    <div class="bavatar" style="background:${col}20;color:${col}">${(b.name||'?').substring(0,2).toUpperCase()}</div>
+    <div class="binfo"><div class="bname">${esc(b.name||b.email)}</div><div class="bdetail">${b.done}/${b.total} done · ${new Date(b.ts).toLocaleDateString()}</div><div class="bprog-track"><div class="bprog-fill" style="width:${b.pct}%;background:${col}"></div></div></div>
+    <div class="bpct" style="color:${b.pct===100?'var(--green)':b.pct>50?'var(--amber)':'var(--muted)'}">${b.pct}%</div>
+  </div>`;}).join('');
+}
+function exportICS(){
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0'];
+  assignments.filter(a=>a.due).forEach(a=>{const dt=new Date(a.due),fmt=d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';lines.push('BEGIN:VEVENT',`DTSTART:${fmt(dt)}`,`DTEND:${fmt(new Date(dt.getTime()+3600000))}`,`SUMMARY:${a.title}`,`DESCRIPTION:${a.course||''} ${a.notes||''}`,'BEGIN:VALARM','TRIGGER:-PT1440M','ACTION:DISPLAY','DESCRIPTION:24h reminder','END:VALARM','BEGIN:VALARM','TRIGGER:-PT120M','ACTION:DISPLAY','DESCRIPTION:2h reminder','END:VALARM','END:VEVENT');});
+  lines.push('END:VCALENDAR');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\r\n')],{type:'text/calendar'}));a.download='assignments.ics';a.click();toast('📅','Calendar exported!');
+}
+function showApp(){goTo('app');document.getElementById('nav-email').textContent=userEmail;document.getElementById('nav-avatar').textContent=(userEmail||'?').substring(0,2).toUpperCase();renderAssignments();}
+function switchTab(name,btn){
+  ['assignments','reminders','board'].forEach(t=>document.getElementById('tab-'+t).style.display='none');
+  document.querySelectorAll('#s-app .tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+name).style.display='block';if(btn)btn.classList.add('on');
+  if(name==='reminders')renderRemSchedule();if(name==='board')renderBoard();
+}
+function saveState(){localStorage.setItem('ct_asgn',JSON.stringify(assignments));localStorage.setItem('ct_rem',JSON.stringify(reminders));localStorage.setItem('ct_board',JSON.stringify(board));}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(icon,msg){document.getElementById('ti').textContent=icon+' ';document.getElementById('tm').textContent=msg;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+function stepActive(n){const ic=document.getElementById('step-'+n+'-icon');ic.textContent='⟳';ic.className='p-step-icon active spin';document.getElementById('step-'+n+'-detail').textContent='Working…';}
+async function stepDo(n,icon,detail,ms){stepActive(n);await delay(ms);stepDone(n,detail);}
+function stepDone(n,detail){const ic=document.getElementById('step-'+n+'-icon');ic.textContent='✓';ic.className='p-step-icon done';document.getElementById('step-'+n+'-detail').textContent=detail;}
+function getDemoEmails(){return`From: dr.hassan@university.edu\nSubject: Assignment 2 — Linked Lists\nDue: April 5, 2026 at 11:59 PM. Worth 15%.\n\nFrom: prof.amal@university.edu\nSubject: Case Study Report\nDeadline: March 28, 2026. Worth 20%.\n\nFrom: admin@college.edu\nSubject: Midterm Exam\nData Structures midterm: March 25, 2026, 10:00 AM, Hall B.`;}
+(function init(){
+  const saved=localStorage.getItem('ct_email');
+  if(saved)document.getElementById('login-email').value=saved;
+  if(saved&&assignments.length>0){
+    userEmail=saved;
+    ['24h','2h','overdue','morning'].forEach(k=>{const b=document.getElementById('t-'+{overdue:'ov',morning:'mg','24h':'24h','2h':'2h'}[k]);if(b)b.classList.toggle('on',!!reminders[k]);});
+    if(Notification.permission==='granted'){document.getElementById('notif-status').textContent='✓ Enabled';document.getElementById('notif-status').style.color='var(--green)';document.getElementById('notif-btn').style.display='none';scheduleNotifs();}
+    showApp();
+  }
+})();
+function logout(){
+  // Revoke Gmail token if active
+  if(_gmailToken && typeof google !== 'undefined' && google.accounts) {
+    try { google.accounts.oauth2.revoke(_gmailToken, ()=>{}); } catch(e){}
+    _gmailToken = null;
+  }
+  localStorage.clear(); location.reload();
+}
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+function track(e,d){if(typeof umami!=='undefined')umami.track(e,d);}
+const _td=toggleDone;window.toggleDone=function(id){track('assignment-toggled');return _td(id);};
+const _ei=exportICS;window.exportICS=function(){track('export-ics');return _ei();};
+const _gc=genCode;window.genCode=function(){track('board-code-generated');return _gc();};
+</script>
+</body>
+</html>
