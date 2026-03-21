@@ -1,9 +1,11 @@
-const CACHE = 'classtrack-v5';
+const CACHE = 'classtrack-v6';
 
 const STATIC = [
   './index.html',
   './manifest.json',
   './sw.js',
+  './privacy.html',
+  './tos.html',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
