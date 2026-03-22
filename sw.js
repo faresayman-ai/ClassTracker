@@ -1,4 +1,4 @@
-const CACHE = 'classtrack-v6';
+const CACHE = 'classtrack-v7';
 
 const STATIC = [
   './index.html',
@@ -37,6 +37,7 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('accounts.google.com') ||
     url.hostname.includes('gmail.googleapis.com') ||
     url.hostname.includes('anthropic.com') ||
+    url.hostname.includes('gstatic.com') ||
     url.hostname.includes('umami') ||
     url.pathname.includes('/__/')
   ) {
