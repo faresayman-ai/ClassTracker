@@ -346,7 +346,8 @@ option{background:var(--s2);}
       <button class="btn-n" id="nav-gmail-btn" onclick="startGmailOAuth()" style="border-color:rgba(66,133,244,0.4);color:#4f8ef7">📧 Scan Gmail</button>
       <button class="btn-n" id="nav-gmail-rescan" onclick="startGmailOAuth()" style="display:none;border-color:rgba(66,133,244,0.4);color:#4f8ef7">🔄 Rescan Gmail</button>
       <button class="btn-n" onclick="goTo('join')">👥 Shared room</button>
-      <button class="btn-n" onclick="logout()">Sign out</button>
+      <button class="btn-n btn-danger" id="nav-gmail-disconnect" onclick="disconnectGmail()" style="display:none">✕ Gmail</button>
+      <button class="btn-n" onclick="logout()" style="border-color:rgba(240,100,100,.35);color:var(--red)">⏻ Sign out</button>
     </div>
   </nav>
   <div class="container">
@@ -978,40 +979,67 @@ function parsePastedEmails() {
 
 
 // ── GMAIL OAUTH + SCANNING ────────────────────────────────────────────────────
-const GMAIL_CLIENT_ID = '827497634968-oqjbc9879s2sd5dmnirp8ehrs8e3cks7.apps.googleusercontent.com';
-const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.metadata';
+const GMAIL_CLIENT_ID = '827497634968-oqjbc9879s2sd5dmnirp8ehrs8e3cbs7.apps.googleusercontent.com';
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 let _gmailToken = null;
+let _gmailClient = null;
 
 function startGmailOAuth() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    toast('✗', 'Google sign-in not loaded. Check your internet connection.');
+  // Retry loading GIS script if not yet available
+  if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
+    toast('⚠', 'Loading Google sign-in… please try again in a moment.');
+    // Dynamically inject GIS script in case it failed to load initially
+    if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.onload = () => toast('✓', 'Google sign-in ready — click again to continue.');
+      s.onerror = () => toast('✗', 'Could not reach Google. Check your internet connection.');
+      document.head.appendChild(s);
+    }
     return;
   }
-  // If we already have a token, go straight to scanning
+
+  // If we already have a valid token, go straight to scanning
   if (_gmailToken) { runGmailScan(_gmailToken); return; }
 
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: GMAIL_CLIENT_ID,
-    scope: GMAIL_SCOPE,
-    callback: (resp) => {
-      if (resp.error) { toast('✗', 'Sign-in cancelled or failed: ' + resp.error); return; }
-      _gmailToken = resp.access_token;
-      // Set email from id_hint if available, else use a placeholder
-      if (!userEmail) {
-        userEmail = 'gmail-user';
-        localStorage.setItem('ct_email', userEmail);
-      }
-      runGmailScan(_gmailToken);
-    },
-  });
-  client.requestAccessToken({ prompt: 'consent' });
+  try {
+    if (!_gmailClient) {
+      _gmailClient = google.accounts.oauth2.initTokenClient({
+        client_id: GMAIL_CLIENT_ID,
+        scope: GMAIL_SCOPE,
+        callback: (resp) => {
+          if (resp.error || !resp.access_token) {
+            const msg = resp.error === 'access_denied' ? 'Access denied — please allow Gmail access in the popup.'
+                      : resp.error === 'popup_closed_by_user' ? 'Popup closed. Click "Scan Gmail" to try again.'
+                      : 'Sign-in failed: ' + (resp.error || 'unknown error');
+            toast('✗', msg);
+            _gmailClient = null; // reset so next click reinitialises
+            return;
+          }
+          _gmailToken = resp.access_token;
+          if (!userEmail) {
+            userEmail = 'gmail-user';
+            localStorage.setItem('ct_email', userEmail);
+          }
+          runGmailScan(_gmailToken);
+        },
+        error_callback: (err) => {
+          toast('✗', 'Google sign-in error: ' + (err?.type || 'unknown'));
+          _gmailClient = null;
+        }
+      });
+    }
+    _gmailClient.requestAccessToken({ prompt: '' }); // '' = skip consent screen if already granted
+  } catch(e) {
+    toast('✗', 'Could not start Google sign-in. Try refreshing the page.');
+    _gmailClient = null;
+  }
 }
 
 async function runGmailScan(token) {
   goTo('processing');
   resetSteps();
 
-  // Step 1: auth
   document.getElementById('proc-title').textContent = 'Scanning Gmail…';
   document.getElementById('proc-sub').textContent = 'Fetching assignment-related emails';
   document.getElementById('step-auth-label').textContent = 'Connecting to Gmail';
@@ -1021,27 +1049,42 @@ async function runGmailScan(token) {
   stepActive('auth');
   await delay(400);
 
-  // Fetch message IDs matching academic keywords
-  const query = encodeURIComponent('subject:(assignment OR deadline OR due OR homework OR exam OR quiz OR project OR midterm OR final OR submit) newer_than:60d');
+  const query = encodeURIComponent('subject:(assignment OR deadline OR due OR homework OR exam OR quiz OR project OR midterm OR final OR submit) newer_than:90d');
   let msgIds = [];
+
   try {
     const listRes = await fetch(
-      `https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${query}`,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${query}`,
       { headers: { Authorization: 'Bearer ' + token } }
     );
-    if (!listRes.ok) throw new Error('Gmail API error: ' + listRes.status);
+    if (listRes.status === 401) {
+      // Token expired — reset and ask user to sign in again
+      _gmailToken = null; _gmailClient = null;
+      stepDone('auth', 'Session expired');
+      await delay(300);
+      goTo('login');
+      toast('✗', 'Gmail session expired. Please sign in again.');
+      return;
+    }
+    if (!listRes.ok) {
+      const errBody = await listRes.json().catch(() => ({}));
+      throw new Error(errBody?.error?.message || 'Gmail API error ' + listRes.status);
+    }
     const listData = await listRes.json();
     msgIds = (listData.messages || []).map(m => m.id);
 
-    // Also try to get user email from profile
+    // Get user's email address from profile
     try {
-      const profileRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/profile', { headers: { Authorization: 'Bearer ' + token } });
-      const profile = await profileRes.json();
-      if (profile.emailAddress) {
-        userEmail = profile.emailAddress;
-        localStorage.setItem('ct_email', userEmail);
-        document.getElementById('nav-email').textContent = userEmail;
-        document.getElementById('nav-avatar').textContent = userEmail.substring(0,2).toUpperCase();
+      const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile',
+        { headers: { Authorization: 'Bearer ' + token } });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.emailAddress) {
+          userEmail = profile.emailAddress;
+          localStorage.setItem('ct_email', userEmail);
+          document.getElementById('nav-email').textContent = userEmail;
+          document.getElementById('nav-avatar').textContent = userEmail.substring(0,2).toUpperCase();
+        }
       }
     } catch(e) {}
 
@@ -1049,34 +1092,36 @@ async function runGmailScan(token) {
     stepDone('auth', 'Connection failed');
     await delay(300);
     goTo('login');
-    toast('✗', 'Gmail access failed. Try signing in again.');
+    toast('✗', 'Gmail access failed: ' + e.message);
     return;
   }
 
-  stepDone('auth', `Connected — found ${msgIds.length} candidate email${msgIds.length !== 1 ? 's' : ''}`);
+  stepDone('auth', `Connected — ${msgIds.length} candidate email${msgIds.length !== 1 ? 's' : ''}`);
   stepActive('scan');
   document.getElementById('step-scan-detail').textContent = `Fetching ${msgIds.length} emails…`;
   await delay(300);
 
-  // Step 2: fetch each message (subject + snippet only — no full body read)
+  // Fetch message metadata (subject + snippet) in batches
   const emailTexts = [];
   const batchSize = 10;
   for (let i = 0; i < Math.min(msgIds.length, 50); i += batchSize) {
     const batch = msgIds.slice(i, i + batchSize);
     const results = await Promise.all(batch.map(id =>
-      fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
-        { headers: { Authorization: 'Bearer ' + token } })
-        .then(r => r.ok ? r.json() : null).catch(() => null)
+      fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+        { headers: { Authorization: 'Bearer ' + token } }
+      ).then(r => r.ok ? r.json() : null).catch(() => null)
     ));
     for (const msg of results) {
       if (!msg) continue;
-      const headers = (msg.payload?.headers || []);
+      const headers = msg.payload?.headers || [];
       const subject = headers.find(h => h.name === 'Subject')?.value || '';
-      const from = headers.find(h => h.name === 'From')?.value || '';
+      const from    = headers.find(h => h.name === 'From')?.value || '';
       const snippet = msg.snippet || '';
       emailTexts.push(`From: ${from}\nSubject: ${subject}\n${snippet}`);
     }
-    document.getElementById('step-scan-detail').textContent = `Read ${Math.min(i + batchSize, msgIds.length)} of ${msgIds.length}…`;
+    document.getElementById('step-scan-detail').textContent =
+      `Read ${Math.min(i + batchSize, msgIds.length)} of ${msgIds.length}…`;
     await delay(100);
   }
 
@@ -1100,7 +1145,7 @@ async function runGmailScan(token) {
   });
 
   await delay(600);
-  showApp();
+  showApp(); // showApp now handles the Gmail button state
   if (added > 0) toast('✓', `Imported ${added} assignment${added !== 1 ? 's' : ''} from Gmail!`);
   else toast('ℹ', 'No new deadlines found in Gmail. Try adding manually.');
 }
@@ -1202,7 +1247,16 @@ function exportICS(){
   lines.push('END:VCALENDAR');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\r\n')],{type:'text/calendar'}));a.download='assignments.ics';a.click();toast('📅','Calendar exported!');
 }
-function showApp(){goTo('app');document.getElementById('nav-email').textContent=userEmail;document.getElementById('nav-avatar').textContent=(userEmail||'?').substring(0,2).toUpperCase();renderAssignments();}
+function showApp(){
+  goTo('app');
+  document.getElementById('nav-email').textContent=userEmail;
+  document.getElementById('nav-avatar').textContent=(userEmail||'?').substring(0,2).toUpperCase();
+  const connected=!!_gmailToken;
+  document.getElementById('nav-gmail-btn').style.display=connected?'none':'';
+  document.getElementById('nav-gmail-rescan').style.display=connected?'':'none';
+  document.getElementById('nav-gmail-disconnect').style.display=connected?'':'none';
+  renderAssignments();
+}
 function switchTab(name,btn){
   ['assignments','reminders','board'].forEach(t=>document.getElementById('tab-'+t).style.display='none');
   document.querySelectorAll('#s-app .tab').forEach(b=>b.classList.remove('on'));
@@ -1229,11 +1283,21 @@ function getDemoEmails(){return`From: dr.hassan@university.edu\nSubject: Assignm
 })();
 function logout(){
   // Revoke Gmail token if active
-  if(_gmailToken && typeof google !== 'undefined' && google.accounts) {
+  if(_gmailToken && typeof google !== 'undefined' && google?.accounts?.oauth2) {
     try { google.accounts.oauth2.revoke(_gmailToken, ()=>{}); } catch(e){}
-    _gmailToken = null;
   }
+  _gmailToken = null; _gmailClient = null;
   localStorage.clear(); location.reload();
+}
+function disconnectGmail(){
+  if(_gmailToken && typeof google !== 'undefined' && google?.accounts?.oauth2) {
+    try { google.accounts.oauth2.revoke(_gmailToken, ()=>{}); } catch(e){}
+  }
+  _gmailToken = null; _gmailClient = null;
+  document.getElementById('nav-gmail-btn').style.display='';
+  document.getElementById('nav-gmail-rescan').style.display='none';
+  document.getElementById('nav-gmail-disconnect').style.display='none';
+  toast('✓','Gmail disconnected.');
 }
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 function track(e,d){if(typeof umami!=='undefined')umami.track(e,d);}
