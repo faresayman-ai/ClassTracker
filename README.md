@@ -2,26 +2,20 @@
 
 <br/>
 
-<!-- LOGO: swap this emoji block for your own logo image if you have one -->
-<img src="https://img.shields.io/badge/📚-ClassTracker-1a1f3a?style=for-the-badge&logoColor=white" height="60" alt="ClassTracker"/>
-
-<h1>ClassTracker</h1>
+<!-- Text-based wordmark logo — no external image/SVG dependency -->
+<h1>
+  📚 <span style="letter-spacing: 1px;">ClassTracker</span>
+</h1>
 
 <p><em>Never miss a deadline again.</em></p>
 
-<a href="https://classtracker-a8ea3.web.app/">
-  <img src="https://img.shields.io/badge/🌐 Live_App-classtracker--a8ea3.web.app-4f7ef7?style=for-the-badge&labelColor=060812" alt="Live App"/>
-</a>
+<a href="https://classtracker-a8ea3.web.app/"><strong>🌐 Live App → classtracker-a8ea3.web.app</strong></a>
 
 <br/><br/>
 
-<img src="https://img.shields.io/badge/PWA-Ready-7c5cbf?style=flat-square&logo=pwa&logoColor=white&labelColor=0d1117"/>
-<img src="https://img.shields.io/badge/Google_Classroom-Sync-4285F4?style=flat-square&logo=google&logoColor=white&labelColor=0d1117"/>
-<img src="https://img.shields.io/badge/Google_Calendar-Integrated-34A853?style=flat-square&logo=googlecalendar&logoColor=white&labelColor=0d1117"/>
-<img src="https://img.shields.io/badge/Apple_Calendar-iOS_Support-555555?style=flat-square&logo=apple&logoColor=white&labelColor=0d1117"/>
-<img src="https://img.shields.io/badge/Firebase-Hosted-FFCA28?style=flat-square&logo=firebase&logoColor=black&labelColor=0d1117"/>
+`PWA Ready` &nbsp;·&nbsp; `Google Classroom Sync` &nbsp;·&nbsp; `Google Calendar Integrated` &nbsp;·&nbsp; `Apple Calendar (iOS)` &nbsp;·&nbsp; `Firebase Hosted`
 
-<br/><br/>
+<br/>
 
 </div>
 
